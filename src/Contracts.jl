@@ -7,6 +7,15 @@ module Contracts
 #     ensures(result>=x)
 #     ... body ...
 
+# TODO: don't fall back to `@assert`, raise different exceptions
+# instead
+macro requires(cond, msgs...)
+    esc(:(@assert $cond $(msgs...)))
+end
+macro ensures(cond, msgs...)
+    esc(:(@assert $cond $(msgs...)))
+end
+
 export @def
 macro def(fun::Expr)
     @assert fun.head === :function
@@ -44,20 +53,20 @@ macro def(fun::Expr)
             push!(stmts, stmt)
         end
     end
+    inner_name = gensym(symbol(name, "_impl"))
     inner =
     Expr(:function,
-         # TODO: use gensym here
-         Expr(:call, symbol(name, "_impl"), args...),
+         :($inner_name($(args...))),
          Expr(:block, stmts...))
     outer =
     Expr(:function,
          decl,
          Expr(:block,
-              # TODO: use new functions `check_requires` and
-              # `check_ensures` instead of `@assert`
-              [Expr(:macrocall, symbol("@assert"), req) for req in requires]...,
-              :(result = $(symbol(name, "_impl"))($(argnames...))),
-              [Expr(:macrocall, symbol("@assert"), ens) for ens in ensures]...,
+              [Expr(:macrocall, :(Contracts.$(symbol("@requires"))), req)
+               for req in requires]...,
+              :(result = $inner_name($(argnames...))),
+              [Expr(:macrocall, :(Contracts.$(symbol("@ensures"))), ens)
+               for ens in ensures]...,
               :result))
     esc(Expr(:toplevel, inner, outer))
 end
