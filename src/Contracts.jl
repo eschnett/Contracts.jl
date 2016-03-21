@@ -1,13 +1,11 @@
 module Contracts
 
-#=
-function f(x,y)
-    requires(x>0)
-    requires(x<y)
-    ensures(result>0)
-    ensures(result>=x)
-    ... body ...
-=#
+# function f(x,y)
+#     requires(x>0)
+#     requires(x<y)
+#     ensures(result>0)
+#     ensures(result>=x)
+#     ... body ...
 
 export @def
 macro def(fun::Expr)
@@ -31,8 +29,9 @@ macro def(fun::Expr)
     ensures = []
     stmts = []
     for stmt in fun.args[2].args
-        # TODO: attach LineNumberNodes to corresponding requires/ensures
-        # statments; don't allow requires/ensures after first body statement
+        # TODO: attach LineNumberNodes to corresponding
+        # requires/ensures statments; don't allow requires/ensures
+        # after first body statement
         if stmt.head === :call
             if stmt.args[1] === :requires
                 append!(requires, stmt.args[2:end])
@@ -46,21 +45,20 @@ macro def(fun::Expr)
         end
     end
     inner =
-        Expr(:function,
-            Expr(:call, symbol(name, "_impl"), args...),
-            Expr(:block, stmts...))
+    Expr(:function,
+         # TODO: use gensym here
+         Expr(:call, symbol(name, "_impl"), args...),
+         Expr(:block, stmts...))
     outer =
-        Expr(:function,
-            decl,
-            Expr(:block,
-                [Expr(:macrocall, symbol("@assert"), req)
-                    for req in requires]...,
-                Expr(:(=),
-                    :result,
-                    Expr(:call, symbol(name, "_impl"), argnames...)),
-                [Expr(:macrocall, symbol("@assert"), ens)
-                    for ens in ensures]...,
-                :result))
+    Expr(:function,
+         decl,
+         Expr(:block,
+              # TODO: use new functions `check_requires` and
+              # `check_ensures` instead of `@assert`
+              [Expr(:macrocall, symbol("@assert"), req) for req in requires]...,
+              :(result = $(symbol(name, "_impl"))($(argnames...))),
+              [Expr(:macrocall, symbol("@assert"), ens) for ens in ensures]...,
+              :result))
     esc(Expr(:toplevel, inner, outer))
 end
 
