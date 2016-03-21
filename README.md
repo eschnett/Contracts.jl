@@ -24,3 +24,5 @@ names of these features. So far, the names `precondition`, `pre`,
 
 - Loops: Loop invariants and loop variants
 - Data structures: Data structure invariants
+- Allow disabling checks for performance
+- Change `@def` to something else

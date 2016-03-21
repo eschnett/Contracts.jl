@@ -54,20 +54,31 @@ macro def(fun::Expr)
         end
     end
     inner_name = gensym(symbol(name, "_impl"))
-    inner =
-    Expr(:function,
-         :($inner_name($(args...))),
-         Expr(:block, stmts...))
-    outer =
-    Expr(:function,
-         decl,
-         Expr(:block,
-              [Expr(:macrocall, :(Contracts.$(symbol("@requires"))), req)
-               for req in requires]...,
-              :(result = $inner_name($(argnames...))),
-              [Expr(:macrocall, :(Contracts.$(symbol("@ensures"))), ens)
-               for ens in ensures]...,
-              :result))
+    inner = quote
+        function $inner_name($(args...))
+            $(stmts...)
+        end
+    end
+    # outer =
+    # Expr(:function,
+    #      decl,
+    #      Expr(:block,
+    #           [Expr(:macrocall, :(Contracts.$(symbol("@requires"))), req)
+    #            for req in requires]...,
+    #           :(result = $inner_name($(argnames...))),
+    #           [Expr(:macrocall, :(Contracts.$(symbol("@ensures"))), ens)
+    #            for ens in ensures]...,
+    #           :result))
+    outer = quote
+        function $name($(args...))
+            $([Expr(:macrocall, :(Contracts.$(symbol("@requires"))), req)
+               for req in requires]...)
+            result = $inner_name($(argnames...))
+            $([Expr(:macrocall, :(Contracts.$(symbol("@ensures"))), ens)
+               for ens in ensures]...)
+            result
+        end
+    end
     esc(Expr(:toplevel, inner, outer))
 end
 
