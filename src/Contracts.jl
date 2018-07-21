@@ -20,7 +20,7 @@ macro ensures(cond, msgs...)
     esc(:(@assert $cond $(msgs...)))
 end
 
-macro def(fun::Expr)
+macro contract(fun::Expr)
     @assert fun.head === :function
     @assert fun.args[1].head === :call
     decl = fun.args[1]
