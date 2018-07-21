@@ -9,7 +9,7 @@ Contracts provides macros for pre- and post-conditions in functions.
 ## Example
 
 ```Julia
-@def function f(x, y)
+@contract function f(x, y)
     requires(x < y)
     ensures(result > x)
     x^2 + y^2
@@ -25,4 +25,3 @@ names of these features. So far, the names `precondition`, `pre`,
 - Loops: Loop invariants and loop variants
 - Data structures: Data structure invariants
 - Allow disabling checks for performance
-- Change `@def` to something else
