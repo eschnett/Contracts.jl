@@ -1,5 +1,5 @@
 using Contracts
-using Base.Test
+using Test
 
 @def function f(x)
     x+1
