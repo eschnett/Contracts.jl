@@ -9,14 +9,17 @@ module Contracts
 
 # TODO: don't fall back to `@assert`, raise different exceptions
 # instead
+
+export @def
+
 macro requires(cond, msgs...)
     esc(:(@assert $cond $(msgs...)))
 end
+
 macro ensures(cond, msgs...)
     esc(:(@assert $cond $(msgs...)))
 end
 
-export @def
 macro def(fun::Expr)
     @assert fun.head === :function
     @assert fun.args[1].head === :call
@@ -41,7 +44,7 @@ macro def(fun::Expr)
         # TODO: attach LineNumberNodes to corresponding
         # requires/ensures statments; don't allow requires/ensures
         # after first body statement
-        if stmt.head === :call
+        if try (stmt.head === :call) catch; false end
             if stmt.args[1] === :requires
                 append!(requires, stmt.args[2:end])
             elseif stmt.args[1] === :ensures
@@ -53,32 +56,19 @@ macro def(fun::Expr)
             push!(stmts, stmt)
         end
     end
-    inner_name = gensym(symbol(name, "_impl"))
+    inner_name = gensym(Symbol(name, "_impl"))
     inner = quote
         function $inner_name($(args...))
             $(stmts...)
         end
     end
-    # outer =
-    # Expr(:function,
-    #      decl,
-    #      Expr(:block,
-    #           [Expr(:macrocall, :(Contracts.$(symbol("@requires"))), req)
-    #            for req in requires]...,
-    #           :(result = $inner_name($(argnames...))),
-    #           [Expr(:macrocall, :(Contracts.$(symbol("@ensures"))), ens)
-    #            for ens in ensures]...,
-    #           :result))
-    outer = quote
-        function $name($(args...))
-            $([Expr(:macrocall, :(Contracts.$(symbol("@requires"))), req)
-               for req in requires]...)
-            result = $inner_name($(argnames...))
-            $([Expr(:macrocall, :(Contracts.$(symbol("@ensures"))), ens)
-               for ens in ensures]...)
-            result
-        end
-    end
+    outer = Expr(:function,
+                 decl,
+                 Expr(:block,
+                      [:(Contracts.@requires $req) for req in requires]...,
+                      :(result = $inner_name($(argnames...))),
+                      [:(Contracts.@ensures $ens) for ens in ensures]...,
+                      :result))
     esc(Expr(:toplevel, inner, outer))
 end
 
