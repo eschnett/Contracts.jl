@@ -10,7 +10,7 @@ module Contracts
 # TODO: don't fall back to `@assert`, raise different exceptions
 # instead
 
-export @def
+export @contract
 
 macro requires(cond, msgs...)
     esc(:(@assert $cond $(msgs...)))
