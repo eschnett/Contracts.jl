@@ -3,9 +3,8 @@ language: julia
 os:
   - linux
   - osx
-julia:
-  - release
-  - nightly
+ julia:
+   - 1.0  
 notifications:
   email: false
 script:

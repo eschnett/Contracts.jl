@@ -1,17 +1,17 @@
 using Contracts
-using Base.Test
+using Test
 
-@def function f(x)
+@contract function f(x)
     x+1
 end
 @test f(3) == 4
 
-@def function f2(x::Int, y::Int)
+@contract function f2(x::Int, y::Int)
     x+y
 end
 @test f2(3, 4) == 7
 
-@def function g(x::Int, y::Int)
+@contract function g(x::Int, y::Int)
     requires(x < y)
     ensures(result > x)
     x^2 + y^2
